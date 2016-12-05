@@ -14,6 +14,7 @@ version 0.1
 use LWP::Simple;
 use Digest::HMAC_MD5 qw(hmac_md5 hmac_md5_hex);
 use JSON;
+use Data::Dumper;
 
 sub new {
     my ($class, $subdomain, $appid, $appkey) = @_;
@@ -30,7 +31,7 @@ sub new {
 }
 
 sub api_request {
-    my ($self, $method, $resource, $payload) = @_;
+    my ($self, $method, $resource, $payload, $effect_handlers) = @_;
     
     my $base_url = "https://$self->{subdomain}.talon.one/v1";
     my $payload = encode_json($payload);
@@ -45,7 +46,11 @@ sub api_request {
                                      'Content-Signature' => "signer=$self->{appid}; signature=$signature"], 
                                     $payload);
     my $response = $ua->request($request);
-    return $response;
+    my $r = decode_json($response->content);
+    
+    $self->process_effects($r,$effect_handlers);
+    
+    return $r;
 }
 
 sub GET {
@@ -61,6 +66,27 @@ sub PUT {
 sub POST {
     $self = shift;
     return $self->api_request("POST", @_);
+}
+
+sub process_effects {
+    my ($self, $response, $handlers) = @_;
+    
+    print "[Talon.One] process_effects: ", Dumper(\$response), "\n";
+
+    my $fxref = $$response{'event'}{'effects'};
+    my @fx = @$fxref;
+
+    foreach (@fx) {
+        my ($campaignId, $rulesetId, $ruleIndex, $effect) = @$_;
+        my ($action, @args) = @$effect;
+
+        my $handler = $handlers->{$action};
+        if ($handler) {
+            &$handler(@args);
+        } else {
+            print "[Talon.One] process_effects: no handler for $action!\n";
+        }
+    }
 }
 
 1;

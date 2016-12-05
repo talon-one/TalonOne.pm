@@ -15,7 +15,13 @@ GetOptions ("appid=i" => \$appid,
 
 my $talon = new TalonOne($subdomain, $appid, $appkey);
 
-my $r = $talon->PUT("customer_sessions/perlrulez1", 
-                    {'coupon' => 'foobar!'});
+sub handle_reject_coupon {
+    my (@args) = @_;
+    
+    print "hello from handle_reject_coupon. args: @args\n";
+}
 
-print Dumper(\$r);
+my $r = $talon->PUT("customer_sessions/perlrulez1", 
+                    {'coupon' => 'foobar!'},
+                    {'rejectCoupon' => \&handle_reject_coupon});
+

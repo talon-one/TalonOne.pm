@@ -1,4 +1,4 @@
-# Set up with current perl (5.24.1)
+# Set up with current Perl (5.24.1)
 
     cpan install LWP
 

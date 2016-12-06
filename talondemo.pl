@@ -36,6 +36,7 @@ sub talonone_demo_integration() {
         print "Set discount: @args\n";
     };
 
+    # Refer to http://developers.talon.one/data-model/attribute-library/ for additional attributes
     my ($ok, $response) = $talon->PUT("customer_profiles/testprofile1234", 
                                       {'attributes' => {'Email' => 'happycustomer@example.org'},
                                        'advocateId' => 'friendid2345'}, 
@@ -49,7 +50,7 @@ sub talonone_demo_integration() {
     my ($ok, $response) = $talon->PUT("customer_sessions/testsession1234", 
                                       {'attributes' => {},
                                        'coupon' => 'DEMO-AWAU-TAYA',
-                                       # set state to 'closed' when the order is completed
+                                       # Set state to 'closed' when the order is completed
                                        'state' => 'open'}, 
                                       \%effect_handlers);
 

@@ -22,9 +22,7 @@ sub new {
     my $new = bless {
         subdomain => $subdomain,
         appid => $appid,
-        appkey => $appkey,
-
-        api_request => api_request
+        appkey => $appkey
     }, $class;
 
     return $new;
@@ -46,11 +44,16 @@ sub api_request {
                                      'Content-Signature' => "signer=$self->{appid}; signature=$signature"], 
                                     $payload);
     my $response = $ua->request($request);
-    my $r = decode_json($response->content);
+    my $ok = 0;
     
-    $self->process_effects($r,$effect_handlers);
+    my $content = decode_json($response->content);
+    if ($response->is_success) {
+        $ok = $self->process_effects($content,$effect_handlers);
+    } else {
+        $ok = 0;
+    }
     
-    return $r;
+    return ($ok, $response);
 }
 
 sub GET {
@@ -71,10 +74,9 @@ sub POST {
 sub process_effects {
     my ($self, $response, $handlers) = @_;
     
-    print "[Talon.One] process_effects: ", Dumper(\$response), "\n";
-
     my $fxref = $$response{'event'}{'effects'};
     my @fx = @$fxref;
+    my $ok = 1;
 
     foreach (@fx) {
         my ($campaignId, $rulesetId, $ruleIndex, $effect) = @$_;
@@ -82,11 +84,13 @@ sub process_effects {
 
         my $handler = $handlers->{$action};
         if ($handler) {
-            &$handler(@args);
+            &$handler($response, @args);
         } else {
-            print "[Talon.One] process_effects: no handler for $action!\n";
+            print "[Talon.One] process_effects: no handler defined for $action!\n";
+            $ok = 0;
         }
     }
+    return $ok;
 }
 
 1;

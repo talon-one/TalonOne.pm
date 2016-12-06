@@ -5,23 +5,58 @@ use Getopt::Long;
 
 use TalonOne;
 
-my $subdomain = 'demo';
-my $appkey = 'fefecafedeadbeef';
-my $appid = 1;
+sub talonone_demo_integration() {
+    my $subdomain = 'demo';
+    my $appkey = 'fefecafedeadbeef';
+    my $appid = 1;
 
-GetOptions ("appid=i" => \$appid,
-            "subdomain=s"   => \$subdomain,
-            "appkey=s"  => \$appkey);
+    GetOptions ("appid=i" => \$appid,
+                "subdomain=s"   => \$subdomain,
+                "appkey=s"  => \$appkey);
 
-my $talon = new TalonOne($subdomain, $appid, $appkey);
+    my $talon = new TalonOne($subdomain, $appid, $appkey);
 
-sub handle_reject_coupon {
-    my (@args) = @_;
+    my %effect_handlers;
     
-    print "hello from handle_reject_coupon. args: @args\n";
+    $effect_handlers{rejectCoupon} = sub {
+        my ($response, @args) = @_;
+        my $coupon = $args[0];
+        print "Invalid coupon: $coupon\n";
+    };
+
+    $effect_handlers{acceptCoupon} = sub {
+        my ($response, @args) = @_;
+        print "Valid coupon: @args\n";
+    };
+
+    $effect_handlers{setDiscount} = sub {
+        my ($response, @args) = @_;
+        
+        # This is a good spot to update discount lines in the current cart
+        print "Set discount: @args\n";
+    };
+
+    my ($ok, $response) = $talon->PUT("customer_profiles/testprofile1234", 
+                                      {'attributes' => {'Email' => 'happycustomer@example.org'},
+                                       'advocateId' => 'friendid2345'}, 
+                                      \%effect_handlers);
+    
+    print "Profile updated, success: $ok\n";
+    if (!$ok) {
+        print Dumper($response);
+    }
+    
+    my ($ok, $response) = $talon->PUT("customer_sessions/testsession1234", 
+                                      {'attributes' => {},
+                                       'coupon' => 'DEMO-AWAU-TAYA',
+                                       # set state to 'closed' when the order is completed
+                                       'state' => 'open'}, 
+                                      \%effect_handlers);
+
+    print "Session updated, success: $ok\n";
+    if (!$ok) {
+        print Dumper($response);
+    }
 }
 
-my $r = $talon->PUT("customer_sessions/perlrulez1", 
-                    {'coupon' => 'foobar!'},
-                    {'rejectCoupon' => \&handle_reject_coupon});
-
+talonone_demo_integration();

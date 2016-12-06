@@ -76,7 +76,6 @@ sub process_effects {
     
     my $fxref = $$response{'event'}{'effects'};
     my @fx = @$fxref;
-    my $ok = 1;
 
     foreach (@fx) {
         my ($campaignId, $rulesetId, $ruleIndex, $effect) = @$_;
@@ -85,12 +84,9 @@ sub process_effects {
         my $handler = $handlers->{$action};
         if ($handler) {
             &$handler($response, @args);
-        } else {
-            print "[Talon.One] process_effects: no handler defined for $action!\n";
-            $ok = 0;
         }
     }
-    return $ok;
+    return 1;
 }
 
 1;

@@ -11,6 +11,6 @@
 
 # Test it
 
-To test the integration, you need to create an application in CAMA and find out its ID and application key. Pass your unique subdomain name, application ID and key to the demo script:
+To test the integration, you need to create an application in the Talon.One Campaign Manager and find out its ID and application key. Pass your unique subdomain name, application ID and key to the demo script:
 
     perl talondemo.pl --subdomain master --appid 9 --appkey <yourappkey> 
